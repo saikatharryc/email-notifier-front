@@ -23,7 +23,7 @@ const DefaultAside = React.lazy(() => import('./DefaultAside'));
 const DefaultFooter = React.lazy(() => import('./DefaultFooter'));
 const DefaultHeader = React.lazy(() => import('./DefaultHeader'));
 
-class DefaultLayout extends Component {
+class MainLayout extends Component {
 
   loading = () => <div className="animated fadeIn pt-1 text-center">Loading...</div>
 
@@ -88,4 +88,4 @@ class DefaultLayout extends Component {
   }
 }
 
-export default DefaultLayout;
+export default MainLayout;
