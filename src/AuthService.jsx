@@ -10,11 +10,11 @@ export default class AuthService {
         this.getProfile = this.getProfile.bind(this);
     }
 
-    login(username, password) {
-        return this.fetch('/apis/user/signin', {
+    login(email, password) {
+        return this.fetch('/auth/login', {
             method: 'POST',
             body: JSON.stringify({
-                username: username,
+                email: email,
                 password: password
             })
         }).then(res => {

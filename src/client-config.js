@@ -2,7 +2,7 @@ let config={}
 if(process.env.ENV === "prod"){
     config.API_BASE= process.env.API_BASE
 }else{
-    config.API_BASE='http://localhost:7000'
+    config.API_BASE='http://localhost:5000'
 }
 
 Object.freeze(config);

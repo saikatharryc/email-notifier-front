@@ -1,11 +1,41 @@
 import React, { Component } from 'react';
-import { Link } from 'react-router-dom';
+import { Link ,Redirect} from 'react-router-dom';
+import {NotificationContainer, NotificationManager} from 'react-notifications';
+import 'react-notifications/lib/notifications.css';
+import AuthService from '../../../AuthService'
 import { Button, Card, CardBody, CardGroup, Col, Container, Form, Input, InputGroup, InputGroupAddon, InputGroupText, Row } from 'reactstrap';
 
+
+const auth = new AuthService();
 class Login extends Component {
+  state={
+    email:'',
+    password:'',
+    redirectHome:false
+  }
+login = (e)=>{
+  auth.login(this.state.email, this.state.password).then((response) => {
+    this.setState({redirectHome: true})
+}, (error) => {
+    if (error.message) {
+      return NotificationManager.error('Login Failed', error.message);
+    } else {
+      return NotificationManager.error('Login Failed');
+    }
+});
+}
+
+  inputHandler =(e)=>{
+    this.setState({
+      [e.target.name]:e.target.value
+    })
+  }
+
   render() {
     return (
       <div className="app flex-row align-items-center">
+            {this.state.redirectHome &&( <Redirect to={{pathname:'/app/home'} }/>) }
+      <NotificationContainer />
         <Container>
           <Row className="justify-content-center">
             <Col md="8">
@@ -18,10 +48,10 @@ class Login extends Component {
                       <InputGroup className="mb-3">
                         <InputGroupAddon addonType="prepend">
                           <InputGroupText>
-                            <i className="icon-user"></i>
+                            @
                           </InputGroupText>
                         </InputGroupAddon>
-                        <Input type="text" placeholder="Username" autoComplete="username" />
+                        <Input type="text" placeholder="email" name="email" autoComplete="email" value={this.state.email} onChange={this.inputHandler} />
                       </InputGroup>
                       <InputGroup className="mb-4">
                         <InputGroupAddon addonType="prepend">
@@ -29,14 +59,11 @@ class Login extends Component {
                             <i className="icon-lock"></i>
                           </InputGroupText>
                         </InputGroupAddon>
-                        <Input type="password" placeholder="Password" autoComplete="current-password" />
+                        <Input type="password" placeholder="Password" name="password" autoComplete="current-password" value={this.state.password} onChange={this.inputHandler} />
                       </InputGroup>
                       <Row>
                         <Col xs="6">
-                          <Button color="primary" className="px-4">Login</Button>
-                        </Col>
-                        <Col xs="6" className="text-right">
-                          <Button color="link" className="px-0">Forgot password?</Button>
+                          <Button color="primary" className="px-4" onClick={this.login} disabled={this.state.email && this.state.password ?  false :true}>Login</Button>
                         </Col>
                       </Row>
                     </Form>

@@ -1,83 +1,58 @@
 import React, { Component, Suspense } from 'react';
-import { Redirect, Route, Switch } from 'react-router-dom';
+import { Redirect, Route, Switch ,Link} from 'react-router-dom';
 import { Container } from 'reactstrap';
+import AuthService from '../../AuthService'
 
 import {
-  AppAside,
-  AppBreadcrumb,
   AppFooter,
   AppHeader,
-  AppSidebar,
-  AppSidebarFooter,
-  AppSidebarForm,
-  AppSidebarHeader,
-  AppSidebarMinimizer,
-  AppSidebarNav,
 } from '@coreui/react';
-// sidebar nav config
-import navigation from '../../_nav';
-// routes config
-import routes from '../../routes';
+import Dashboard from '../../views/Dashboard'
+import {NotificationContainer} from 'react-notifications';
 
-const DefaultAside = React.lazy(() => import('./DefaultAside'));
+
 const DefaultFooter = React.lazy(() => import('./DefaultFooter'));
 const DefaultHeader = React.lazy(() => import('./DefaultHeader'));
-
+const auth = new AuthService();
 class MainLayout extends Component {
-
+state={
+  logout:false
+}
   loading = () => <div className="animated fadeIn pt-1 text-center">Loading...</div>
 
+  componentDidMount() {
+    this.setState({
+      height: ((document.body.scrollHeight - document.getElementsByClassName('app-footer')[0].offsetHeight)) + 'px',
+    })
+}
   signOut(e) {
     e.preventDefault()
-    this.props.history.push('/login')
+    auth.logout();
+    this.setState({
+      logout:true
+    })
   }
 
   render() {
     return (
-      <div className="app">
+      <div className="app" style={{
+
+          backgroundPositionY: 'bottom',
+          backgroundRepeat: 'repeat-x',
+          backgroundRepeatX: 'repeat',
+          overflow:'scroll',
+      }}>
+      <NotificationContainer />
+      {this.state.logout && (<Redirect path='/login' />)}
         <AppHeader fixed>
           <Suspense  fallback={this.loading()}>
             <DefaultHeader onLogout={e=>this.signOut(e)}/>
           </Suspense>
         </AppHeader>
-        <div className="app-body">
-          <AppSidebar fixed display="lg">
-            <AppSidebarHeader />
-            <AppSidebarForm />
-            <Suspense>
-            <AppSidebarNav navConfig={navigation} {...this.props} />
-            </Suspense>
-            <AppSidebarFooter />
-            <AppSidebarMinimizer />
-          </AppSidebar>
-          <main className="main">
-            <AppBreadcrumb appRoutes={routes}/>
-            <Container fluid>
-              <Suspense fallback={this.loading()}>
-                <Switch>
-                  {routes.map((route, idx) => {
-                    return route.component ? (
-                      <Route
-                        key={idx}
-                        path={route.path}
-                        exact={route.exact}
-                        name={route.name}
-                        render={props => (
-                          <route.component {...props} />
-                        )} />
-                    ) : (null);
-                  })}
-                  <Redirect from="/" to="/dashboard" />
-                </Switch>
-              </Suspense>
-            </Container>
-          </main>
-          <AppAside fixed>
-            <Suspense fallback={this.loading()}>
-              <DefaultAside />
-            </Suspense>
-          </AppAside>
-        </div>
+        <Container style={{marginTop:"5%",          height: "720px",
+}}>
+        <Route  path='/app/dashboard' component={Dashboard}  />
+        </Container>
         <AppFooter>
           <Suspense fallback={this.loading()}>
             <DefaultFooter />

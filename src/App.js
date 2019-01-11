@@ -17,7 +17,7 @@ class App extends Component {
   };
 
   requireNotLoggedIn = RouteComponent => {
-      return auth.loggedIn() ? <Redirect to="/app/home" /> : <RouteComponent />;
+      return auth.loggedIn() ? <Redirect to="/app" /> : <RouteComponent />;
   };
 
 
@@ -30,7 +30,7 @@ class App extends Component {
             <Route exact path="/register" name="Register Page" render={()=>this.requireNotLoggedIn(Register)} />
             {/* <Route exact path="/404" name="Page 404" component={Page404} />
             <Route exact path="/500" name="Page 500" component={Page500} /> */}
-            <Route path="/app/*" name="Dash" render={()=>this.requireNotLoggedIn(MainLayout)} />
+            <Route path="/app/*" name="Dash" render={()=>this.requireAuth(MainLayout)} />
           </Switch>
       </HashRouter>
     );
