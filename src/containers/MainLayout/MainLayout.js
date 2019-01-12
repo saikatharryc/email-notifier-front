@@ -9,7 +9,7 @@ import {
 } from '@coreui/react';
 import Dashboard from '../../views/Dashboard'
 import {NotificationContainer} from 'react-notifications';
-
+import Tables from '../../views/Base/Tables'
 
 const DefaultFooter = React.lazy(() => import('./DefaultFooter'));
 const DefaultHeader = React.lazy(() => import('./DefaultHeader'));
@@ -49,8 +49,9 @@ state={
             <DefaultHeader onLogout={e=>this.signOut(e)}/>
           </Suspense>
         </AppHeader>
-        <Container style={{marginTop:"5%",          height: "720px",
+        <Container style={{marginTop:"5%",          height: this.state.height,
 }}>
+        <Route path='/app/tables' Component={Tables} />
         <Route  path='/app/dashboard' component={Dashboard}  />
         </Container>
         <AppFooter>
