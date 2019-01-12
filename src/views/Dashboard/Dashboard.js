@@ -1,42 +1,24 @@
-import React, { Component, Compusernament, lazy, Suspense } from "react";
+import React, { Component } from "react";
 import { Bar, Line } from "react-chartjs-2";
 import {
-  Badge,
   Button,
-  ButtonDropdown,
-  ButtonGroup,
-  ButtonToolbar,
   Card,
   CardBody,
   CardFooter,
   CardHeader,
-  CardTitle,
   Col,
-  Dropdown,
-  DropdownItem,
-  DropdownMenu,
-  DropdownToggle,
-  Progress,
   Row,
-  Table,
   Input,
   InputGroup,
   InputGroupAddon,
   InputGroupText
 } from "reactstrap";
 import ReactTable from "react-table";
+import { NotificationManager} from 'react-notifications';
+
 import "react-table/react-table.css";
-import { CustomTooltips } from "@coreui/coreui-plugin-chartjs-custom-tooltips";
-import { getStyle, hexToRgba } from "@coreui/coreui/dist/js/coreui-utilities";
-
-const Widget03 = lazy(() => import("../../views/Widgets/Widget03"));
-
-const brandPrimary = getStyle("--primary");
-const brandSuccess = getStyle("--success");
-const brandInfo = getStyle("--info");
-const brandWarning = getStyle("--warning");
-const brandDanger = getStyle("--danger");
-
+import AuthService from '../../AuthService';
+const auth = new  AuthService();
 class Dashboard extends Component {
   state = {
     dropdownOpen: false,
@@ -52,29 +34,33 @@ class Dashboard extends Component {
   };
 
   componentDidMount() {
-    const data2 = [
-      { email: "email0" },
-      { email: "email1" },
-      { email: "email2" },
-      { email: "email3" },
-      { email: "email4" },
-      { email: "email5" },
-      { email: "email6" },
-      { email: "email7" },
-      { email: "email8" }
-    ];
+    const page =1;
+    let params ={
+      limit:page*this.state.pageSize,
+      skip:page*this.state.pageSize - this.state.pageSize
+    }
+    let query = Object.keys(params)
+             .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+             .join('&');
+    auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data2=>{
 
-    var checkedCopy = [];
-    var selectAll = this.state.selectAll;
-    data2.forEach(function(e, index) {
-      checkedCopy.push(selectAll);
-    });
 
-    this.setState({
-      data: data2,
-      checked: checkedCopy,
-      selectAll: selectAll
-    });
+      var checkedCopy = [];
+      var selectAll = this.state.selectAll;
+      data2.forEach(function(e, index) {
+        checkedCopy.push(selectAll);
+      });
+
+      this.setState({
+        data: data2,
+        checked: checkedCopy,
+        selectAll: selectAll
+      });
+    }).catch(error=>{
+      console.log(error);
+     NotificationManager.error("Failed to fetch emails");
+    })
+
   }
 
   toggle(val) {
@@ -135,32 +121,68 @@ class Dashboard extends Component {
     });
   };
   changeHandler=(e)=>{
-    console.log(e.target.value,e.target.name)
+   this.setState({
+     [e.target.name]:e.target.value
+   })
   }
   loading = () => (
     <div className="animated fadeIn pt-1 text-center">Loading...</div>
   );
-  pageChange = page => {
-    //fetch data where limit : page*this.state.pageSize, skip:page*this.state.pageSize - this.state.pageSize
-  };
   pageSizeChange = pageSize => {
     this.setState({
       pageSize: pageSize
     });
   };
 
+  pageChange = page => {
+    //fetch data where limit : page*this.state.pageSize, skip:page*this.state.pageSize - this.state.pageSize
+    let params ={
+      limit:page*this.state.pageSize,
+      skip:page*this.state.pageSize - this.state.pageSize
+    }
+    let query = Object.keys(params)
+             .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
+             .join('&');
+    auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data=>{
+      console.log(data);
+      var checkedCopy = this.state.checked;
+      var selectAll = this.state.selectAll;
+      data.forEach(function(e, index) {
+        checkedCopy.push(selectAll);
+      });
+
+      this.setState({
+        data: data,
+        checked: checkedCopy,
+        selectAll: selectAll
+      });
+    }).catch(error=>{
+      console.log(error);
+     NotificationManager.error("Failed to fetch emails");
+    })
+  };
   addEmail =()=>{
-    this.state.email
+   auth.fetch('/apis/emailList/addEmail',{ method: 'POST',
+   body:JSON.stringify({
+     email:this.state.email
+   })}).then(data=>{
+     console.log(data);
+     NotificationManager.success("Email added to the list ");
+   }).catch(error=>{
+     console.log(error);
+    NotificationManager.error("Failed to add email");
+   })
+    // this.state.email
   }
   addCampaign=()=>{
-      this.state.etemplate,
-      this.state.cpgname
-      this.state.recepients
+      // this.state.etemplate,
+      // this.state.cpgname
+      // this.state.recepients
   }
   runCampaign =()=>{
-    this.state.campaigns
-    this.state.frequency
-    this.state.limitedDays
+    // this.state.campaigns
+    // this.state.frequency
+    // this.state.limitedDays
   }
   render() {
     return (
@@ -176,7 +198,7 @@ class Dashboard extends Component {
                   <InputGroupAddon addonType="prepend">
                     <InputGroupText>@</InputGroupText>
                   </InputGroupAddon>
-                  <Input type="text" placeholder="email" name="email" onChange={this.handleChange} />
+                  <Input type="text" placeholder="email" name="email" onChange={this.changeHandler} />
                 </InputGroup>
                 <Button color="primary" className="px-4" onClick={this.addEmail} >
                   Add
@@ -209,7 +231,7 @@ class Dashboard extends Component {
               </InputGroup>
             For:
             <InputGroup className="mb-4">
-            <InputGroupAddon addonType="postpend">
+            <InputGroupAddon addonType="append">
                     <InputGroupText>Days</InputGroupText>
                   </InputGroupAddon>
                   <Input type="number" placeholder="days" name="limitedDays" onChange={this.changeHandler} />

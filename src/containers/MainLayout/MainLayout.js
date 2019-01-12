@@ -10,9 +10,13 @@ import {
 import Dashboard from '../../views/Dashboard'
 import {NotificationContainer} from 'react-notifications';
 import Tables from '../../views/Base/Tables'
+import 'react-notifications/lib/notifications.css';
+
 
 const DefaultFooter = React.lazy(() => import('./DefaultFooter'));
 const DefaultHeader = React.lazy(() => import('./DefaultHeader'));
+
+
 const auth = new AuthService();
 class MainLayout extends Component {
 state={
