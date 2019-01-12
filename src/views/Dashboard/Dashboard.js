@@ -30,7 +30,9 @@ class Dashboard extends Component {
     checked: [],
     pageSize: 5,
     maxPageNumber: 0,
-    recepients: []
+    recepients: [],
+    campaignsData:[],
+    frequency:'daily'
   };
 
   componentDidMount() {
@@ -42,6 +44,7 @@ class Dashboard extends Component {
     let query = Object.keys(params)
              .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
              .join('&');
+    this.fetchCampaign();
     auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data2=>{
 
 
@@ -178,13 +181,58 @@ class Dashboard extends Component {
       // this.state.etemplate,
       // this.state.cpgname
       // this.state.recepients
+      auth.fetch('/apis/campaign/createCampaign',{ method: 'POST',
+      body:JSON.stringify({
+        campaignName:this.state.cpgname,
+        usersSelected:this.state.recepients,
+        template:this.state.etemplate
+      })}).then(data=>{
+        console.log(data);
+        NotificationManager.success("Campaign added ! ");
+      }).catch(error=>{
+        console.log(error);
+       NotificationManager.error("Failed to add Campaign!");
+      })
+
+  }
+  fetchCampaign =()=>{
+      auth.fetch('/apis/campaign/fetchCampaign',{method:'GET'}).then(data=>{
+        this.setState({
+          campaignsData:data
+        });
+        if(!this.state.campaigns && this.state.campaignsData.length){
+          this.setState({
+            campaigns:data[0]._id
+          })
+        }
+      }).catch(error=>{
+        console.log(error);
+       NotificationManager.error("Failed to fetch Campaign!");
+      })
   }
   runCampaign =()=>{
     // this.state.campaigns
     // this.state.frequency
     // this.state.limitedDays
+
+    auth.fetch('/apis/campaign/runCampaign',{ method: 'POST',
+    body:JSON.stringify({
+      frequency:this.state.frequency,
+      timePeriod:this.state.limitedDays,
+      _id:this.state.campaigns
+    })}).then(data=>{
+      console.log(data);
+      NotificationManager.success("Campaign added ! ");
+    }).catch(error=>{
+      console.log(error);
+     NotificationManager.error("Failed to add Campaign!");
+    })
   }
   render() {
+    let items=[];
+    this.state.campaignsData.length && this.state.campaignsData.forEach((e,i)=>{
+      items.push(<option value={e._id} key={i}>{e.campaignName}</option>)
+    });
     return (
       <div className="animated fadeIn">
         <Row>
@@ -214,11 +262,8 @@ class Dashboard extends Component {
                <CardBody>
                  Select Campaigns: <InputGroup className="mb-4">
 
-               <select name="campaigns" onChange={this.changeHandler}>
-                <option value="volvo">Volvo</option>
-                <option value="saab">Saab</option>
-                <option value="mercedes">Mercedes</option>
-                <option value="audi">Audi</option>
+               <select name="campaigns" placeholder="select campaigns" onChange={this.changeHandler}>
+               {items}
               </select>
               </InputGroup>
 
@@ -258,7 +303,7 @@ class Dashboard extends Component {
                     type="text"
                     placeholder="Campaign name"
                     name="cpgname"
-                    onChange={this.handleChange}
+                    onChange={this.changeHandler}
                   />
                 </InputGroup>
                 <br />
@@ -312,7 +357,7 @@ class Dashboard extends Component {
                   cols={80}
                   rows={20}
                   name="etemplate"
-                  onChange={this.handleChange}
+                  onChange={this.changeHandler}
                   style={{ margin: "2em" }}
                 ></textarea>
 
