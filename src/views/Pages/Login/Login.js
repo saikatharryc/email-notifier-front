@@ -34,7 +34,7 @@ login = (e)=>{
   render() {
     return (
       <div className="app flex-row align-items-center">
-            {this.state.redirectHome &&( <Redirect to={{pathname:'/app/home'} }/>) }
+            {this.state.redirectHome &&( <Redirect to={{pathname:'/app/dashboard'} }/>) }
       <NotificationContainer />
         <Container>
           <Row className="justify-content-center">

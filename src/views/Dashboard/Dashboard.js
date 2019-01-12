@@ -32,7 +32,10 @@ class Dashboard extends Component {
     maxPageNumber: 0,
     recepients: [],
     campaignsData:[],
-    frequency:'daily'
+    frequency:'daily',
+    sent:0,
+    clickedData:[],
+    opendData:[]
   };
 
   componentDidMount() {
@@ -45,6 +48,7 @@ class Dashboard extends Component {
              .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
              .join('&');
     this.fetchCampaign();
+    this.fetchStats();
     auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data2=>{
 
 
@@ -64,6 +68,19 @@ class Dashboard extends Component {
      NotificationManager.error("Failed to fetch emails");
     })
 
+  }
+
+  fetchStats = ()=>{
+    auth.fetch('/apis/stats',{method:'GET'}).then(data=>{
+      this.setState({
+        sent:data.toalSent,
+        opendData:data.openData,
+        clickedData:data.clickData
+      });
+    }).catch(error=>{
+      console.log(error);
+      NotificationManager.error("Unable to fetch stats!");
+    })
   }
 
   toggle(val) {
@@ -170,6 +187,18 @@ class Dashboard extends Component {
      email:this.state.email
    })}).then(data=>{
      console.log(data);
+     var checkedCopy = this.state.checked;
+      var selectAll = this.state.selectAll;
+     let statedata = this.state.data;
+     statedata.push(data);
+     statedata.forEach(function(e, index) {
+      checkedCopy.push(selectAll);
+    });
+     this.setState({
+       data:statedata,
+       checked: checkedCopy,
+       selectAll: selectAll
+     })
      NotificationManager.success("Email added to the list ");
    }).catch(error=>{
      console.log(error);
@@ -380,6 +409,70 @@ class Dashboard extends Component {
             </Card>
             </Col>
         </Row>
+        <Row>
+        <Col lg="6">
+        All Stats:
+        Toatal Sent:{this.state.sent}
+        <Card>
+          <CardHeader>opend:</CardHeader>
+          <ReactTable
+                  data={this.state.opendData}
+                  filterable
+                  showPagination={true}
+                  showPageSizeOptions={true}
+                  defaultFilterMethod={(filter, row) =>
+                    row[filter.id] !== undefined
+                      ? String(row[filter.id])
+                          .toLowerCase()
+                          .includes(filter.value.toLowerCase())
+                      : false
+                  }
+                  columns={[
+                    {
+                      Header: "email",
+                      accessor: "recipient"
+                    }
+                    ,
+                    {
+                      Header: "Total opened Times",
+                      accessor: "count"
+                    }
+                  ]}
+                  className="-striped "
+                />
+        </Card>
+        </Col>
+        <Col lg="6">
+        <Card>
+        <CardHeader>clicked:</CardHeader>
+        <ReactTable
+                  data={this.state.clickedData}
+                  filterable
+                  showPagination={true}
+                  showPageSizeOptions={true}
+                  defaultFilterMethod={(filter, row) =>
+                    row[filter.id] !== undefined
+                      ? String(row[filter.id])
+                          .toLowerCase()
+                          .includes(filter.value.toLowerCase())
+                      : false
+                  }
+                  columns={[
+                    {
+                      Header: "email",
+                      accessor: "recipient"
+                    }
+                    ,
+                    {
+                      Header: "Total clicked Times",
+                      accessor: "count"
+                    }
+                  ]}
+                  className="-striped "
+                />
+                </Card>
+        </Col>
+          </Row>
       </div>
     );
   }

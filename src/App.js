@@ -17,7 +17,7 @@ class App extends Component {
   };
 
   requireNotLoggedIn = RouteComponent => {
-      return auth.loggedIn() ? <Redirect to="/app" /> : <RouteComponent />;
+      return auth.loggedIn() ? <Redirect to="/app/dashboard" /> : <RouteComponent />;
   };
 
 
