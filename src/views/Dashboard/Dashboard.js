@@ -1,5 +1,4 @@
 import React, { Component } from "react";
-import { Bar, Line } from "react-chartjs-2";
 import {
   Button,
   Card,
@@ -14,11 +13,14 @@ import {
   InputGroupText
 } from "reactstrap";
 import ReactTable from "react-table";
-import { NotificationManager} from 'react-notifications';
-
+import { NotificationManager } from "react-notifications";
+import cityData from "./city_state";
 import "react-table/react-table.css";
-import AuthService from '../../AuthService';
-const auth = new  AuthService();
+import AuthService from "../../AuthService";
+
+const allCity = Object.keys(cityData);
+
+const auth = new AuthService();
 class Dashboard extends Component {
   state = {
     dropdownOpen: false,
@@ -31,57 +33,64 @@ class Dashboard extends Component {
     pageSize: 5,
     maxPageNumber: 0,
     recepients: [],
-    campaignsData:[],
-    frequency:'daily',
-    sent:0,
-    clickedData:[],
-    opendData:[]
+    campaignsData: [],
+    frequency: "daily",
+    sent: 0,
+    clickedData: [],
+    opendData: [],
+    userState: allCity[0],
+    userCity: cityData[allCity[0]][0],
+    campState: allCity[0],
+    campCity: 'all'
   };
 
   componentDidMount() {
-    const page =1;
-    let params ={
-      limit:page*this.state.pageSize,
-      skip:page*this.state.pageSize - this.state.pageSize
-    }
+    const page = 1;
+    let params = {
+      limit: page * this.state.pageSize,
+      skip: page * this.state.pageSize - this.state.pageSize
+    };
     let query = Object.keys(params)
-             .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
-             .join('&');
+      .map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k]))
+      .join("&");
     this.fetchCampaign();
     this.fetchStats();
-    auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data2=>{
+    auth
+      .fetch("/apis/emailList/fetchEmails?" + query, { method: "GET" })
+      .then(data2 => {
+        var checkedCopy = [];
+        var selectAll = this.state.selectAll;
+        data2.forEach(function(e, index) {
+          checkedCopy.push(selectAll);
+        });
 
-
-      var checkedCopy = [];
-      var selectAll = this.state.selectAll;
-      data2.forEach(function(e, index) {
-        checkedCopy.push(selectAll);
+        this.setState({
+          data: data2,
+          checked: checkedCopy,
+          selectAll: selectAll
+        });
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to fetch emails");
       });
-
-      this.setState({
-        data: data2,
-        checked: checkedCopy,
-        selectAll: selectAll
-      });
-    }).catch(error=>{
-      console.log(error);
-     NotificationManager.error("Failed to fetch emails");
-    })
-
   }
 
-  fetchStats = ()=>{
-    auth.fetch('/apis/stats',{method:'GET'}).then(data=>{
-      this.setState({
-        sent:data.toalSent,
-        opendData:data.openData,
-        clickedData:data.clickData
+  fetchStats = () => {
+    auth
+      .fetch("/apis/stats", { method: "GET" })
+      .then(data => {
+        this.setState({
+          sent: data.toalSent,
+          opendData: data.openData,
+          clickedData: data.clickData
+        });
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Unable to fetch stats!");
       });
-    }).catch(error=>{
-      console.log(error);
-      NotificationManager.error("Unable to fetch stats!");
-    })
-  }
+  };
 
   toggle(val) {
     this.setState({
@@ -140,11 +149,11 @@ class Dashboard extends Component {
       checked: checkedCopy
     });
   };
-  changeHandler=(e)=>{
-   this.setState({
-     [e.target.name]:e.target.value
-   })
-  }
+  changeHandler = e => {
+    this.setState({
+      [e.target.name]: e.target.value
+    });
+  };
   loading = () => (
     <div className="animated fadeIn pt-1 text-center">Loading...</div>
   );
@@ -156,112 +165,143 @@ class Dashboard extends Component {
 
   pageChange = page => {
     //fetch data where limit : page*this.state.pageSize, skip:page*this.state.pageSize - this.state.pageSize
-    let params ={
-      limit:page*this.state.pageSize,
-      skip:page*this.state.pageSize - this.state.pageSize
-    }
+    let params = {
+      limit: page * this.state.pageSize,
+      skip: page * this.state.pageSize - this.state.pageSize
+    };
     let query = Object.keys(params)
-             .map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
-             .join('&');
-    auth.fetch('/apis/emailList/fetchEmails?'+query,{method:'GET'}).then(data=>{
-      console.log(data);
-      var checkedCopy = this.state.checked;
-      var selectAll = this.state.selectAll;
-      data.forEach(function(e, index) {
-        checkedCopy.push(selectAll);
-      });
+      .map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k]))
+      .join("&");
+    auth
+      .fetch("/apis/emailList/fetchEmails?" + query, { method: "GET" })
+      .then(data => {
+        console.log(data);
+        var checkedCopy = this.state.checked;
+        var selectAll = this.state.selectAll;
+        data.forEach(function(e, index) {
+          checkedCopy.push(selectAll);
+        });
 
-      this.setState({
-        data: data,
-        checked: checkedCopy,
-        selectAll: selectAll
+        this.setState({
+          data: data,
+          checked: checkedCopy,
+          selectAll: selectAll
+        });
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to fetch emails");
       });
-    }).catch(error=>{
-      console.log(error);
-     NotificationManager.error("Failed to fetch emails");
-    })
   };
-  addEmail =()=>{
-   auth.fetch('/apis/emailList/addEmail',{ method: 'POST',
-   body:JSON.stringify({
-     email:this.state.email
-   })}).then(data=>{
-     console.log(data);
-     var checkedCopy = this.state.checked;
-      var selectAll = this.state.selectAll;
-     let statedata = this.state.data;
-     statedata.push(data);
-     statedata.forEach(function(e, index) {
-      checkedCopy.push(selectAll);
-    });
-     this.setState({
-       data:statedata,
-       checked: checkedCopy,
-       selectAll: selectAll
-     })
-     NotificationManager.success("Email added to the list ");
-   }).catch(error=>{
-     console.log(error);
-    NotificationManager.error("Failed to add email");
-   })
+  addEmail = () => {
+    auth
+      .fetch("/apis/emailList/addEmail", {
+        method: "POST",
+        body: JSON.stringify({
+          email: this.state.email,
+          name: this.state.name,
+          city: this.state.userCity,
+          state: this.state.userState
+        })
+      })
+      .then(data => {
+        console.log(data);
+        var checkedCopy = this.state.checked;
+        var selectAll = this.state.selectAll;
+        let statedata = this.state.data;
+        statedata.push(data);
+        statedata.forEach(function(e, index) {
+          checkedCopy.push(selectAll);
+        });
+        this.setState({
+          data: statedata,
+          checked: checkedCopy,
+          selectAll: selectAll
+        });
+        NotificationManager.success("Email added to the list ");
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to add email");
+      });
     // this.state.email
-  }
-  addCampaign=()=>{
-      // this.state.etemplate,
-      // this.state.cpgname
-      // this.state.recepients
-      auth.fetch('/apis/campaign/createCampaign',{ method: 'POST',
-      body:JSON.stringify({
-        campaignName:this.state.cpgname,
-        usersSelected:this.state.recepients,
-        template:this.state.etemplate
-      })}).then(data=>{
+  };
+  addCampaign = () => {
+    // this.state.etemplate,
+    // this.state.cpgname
+    // this.state.recepients
+    auth
+      .fetch("/apis/campaign/createCampaign", {
+        method: "POST",
+        body: JSON.stringify({
+          campaignName: this.state.cpgname,
+          usersSelected: {
+            city:this.state.campCity,
+            state:this.state.campState
+          },
+          template: this.state.etemplate
+        })
+      })
+      .then(data => {
         console.log(data);
         NotificationManager.success("Campaign added ! ");
-      }).catch(error=>{
-        console.log(error);
-       NotificationManager.error("Failed to add Campaign!");
       })
-
-  }
-  fetchCampaign =()=>{
-      auth.fetch('/apis/campaign/fetchCampaign',{method:'GET'}).then(data=>{
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to add Campaign!");
+      });
+  };
+  fetchCampaign = () => {
+    auth
+      .fetch("/apis/campaign/fetchCampaign", { method: "GET" })
+      .then(data => {
         this.setState({
-          campaignsData:data
+          campaignsData: data
         });
-        if(!this.state.campaigns && this.state.campaignsData.length){
+        if (!this.state.campaigns && this.state.campaignsData.length) {
           this.setState({
-            campaigns:data[0]._id
-          })
+            campaigns: data[0]._id
+          });
         }
-      }).catch(error=>{
-        console.log(error);
-       NotificationManager.error("Failed to fetch Campaign!");
       })
-  }
-  runCampaign =()=>{
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to fetch Campaign!");
+      });
+  };
+  runCampaign = () => {
     // this.state.campaigns
     // this.state.frequency
     // this.state.limitedDays
 
-    auth.fetch('/apis/campaign/runCampaign',{ method: 'POST',
-    body:JSON.stringify({
-      frequency:this.state.frequency,
-      timePeriod:this.state.limitedDays,
-      _id:this.state.campaigns
-    })}).then(data=>{
-      console.log(data);
-      NotificationManager.success("Campaign added ! ");
-    }).catch(error=>{
-      console.log(error);
-     NotificationManager.error("Failed to add Campaign!");
-    })
-  }
+    auth
+      .fetch("/apis/campaign/runCampaign", {
+        method: "POST",
+        body: JSON.stringify({
+          frequency: this.state.frequency,
+          timePeriod: this.state.limitedDays,
+          _id: this.state.campaigns
+        })
+      })
+      .then(data => {
+        console.log(data);
+        NotificationManager.success("Campaign added ! ");
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to add Campaign!");
+      });
+  };
   render() {
-    let items=[];
-    this.state.campaignsData.length && this.state.campaignsData.forEach((e,i)=>{
-      items.push(<option value={e._id} key={i}>{e.campaignName}</option>)
-    });
+    let items = [];
+    this.state.campaignsData.length &&
+      this.state.campaignsData.forEach((e, i) => {
+        items.push(
+          <option value={e._id} key={i}>
+            {e.campaignName}
+          </option>
+        );
+      });
     return (
       <div className="animated fadeIn">
         <Row>
@@ -273,51 +313,117 @@ class Dashboard extends Component {
                 <p className="text-muted"> Addd/Update User Email List:</p>
                 <InputGroup className="mb-4">
                   <InputGroupAddon addonType="prepend">
+                    <InputGroupText>name</InputGroupText>
+                  </InputGroupAddon>
+                  <Input
+                    type="text"
+                    placeholder="name"
+                    name="name"
+                    onChange={this.changeHandler}
+                  />
+                </InputGroup>
+                <InputGroup className="mb-4">
+                  <InputGroupAddon addonType="prepend">
                     <InputGroupText>@</InputGroupText>
                   </InputGroupAddon>
-                  <Input type="text" placeholder="email" name="email" onChange={this.changeHandler} />
+                  <Input
+                    type="text"
+                    placeholder="email"
+                    name="email"
+                    onChange={this.changeHandler}
+                  />
                 </InputGroup>
-                <Button color="primary" className="px-4" onClick={this.addEmail} >
+                Select State:
+                <InputGroup className="mb-4">
+                  <select name="userState" onChange={this.changeHandler}>
+                    {allCity.map((e, i) => {
+                      return (
+                        <option value={e} key={i}>
+                          {e}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                Select City:
+                <InputGroup className="mb-4">
+                  <select
+                    name="userCity"
+                    onChange={this.changeHandler}
+                    disabled={this.state.userState ? false : true}
+                  >
+                    {cityData[this.state.userState].map((e, i) => {
+                      return (
+                        <option value={e} key={i}>
+                          {e}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                <Button
+                  color="primary"
+                  className="px-4"
+                  onClick={this.addEmail}
+                  disabled={
+                    this.state.name &&
+                    this.state.userCity &&
+                    this.state.userState &&
+                    this.state.email
+                      ? false
+                      : true
+                  }
+                >
                   Add
                 </Button>
               </div>
             </Card>
-            </Col>
-            <Col xs="12" sm="6" lg="4">
+          </Col>
+          <Col xs="12" sm="6" lg="4">
             <Card>
-              <CardHeader>
-                Run a Campaign
-              </CardHeader>
-               <CardBody>
-                 Select Campaigns: <InputGroup className="mb-4">
-
-               <select name="campaigns" placeholder="select campaigns" onChange={this.changeHandler}>
-               {items}
-              </select>
-              </InputGroup>
-
-              Select Frequency:<InputGroup className="mb-4">
-               <select name="frequency" onChange={this.changeHandler}>
-                <option value="daily">daily</option>
-                <option value="weekly">weekly</option>
-                <option value="monthly">monthly</option>
-              </select>
-              </InputGroup>
-            For:
-            <InputGroup className="mb-4">
-            <InputGroupAddon addonType="append">
+              <CardHeader>Run a Campaign</CardHeader>
+              <CardBody>
+                Select Campaigns:{" "}
+                <InputGroup className="mb-4">
+                  <select
+                    name="campaigns"
+                    placeholder="select campaigns"
+                    onChange={this.changeHandler}
+                  >
+                    {items}
+                  </select>
+                </InputGroup>
+                Select Frequency:
+                <InputGroup className="mb-4">
+                  <select name="frequency" onChange={this.changeHandler}>
+                    <option value="daily">daily</option>
+                    <option value="weekly">weekly</option>
+                    <option value="monthly">monthly</option>
+                  </select>
+                </InputGroup>
+                For:
+                <InputGroup className="mb-4">
+                  <InputGroupAddon addonType="append">
                     <InputGroupText>Days</InputGroupText>
                   </InputGroupAddon>
-                  <Input type="number" placeholder="days" name="limitedDays" onChange={this.changeHandler} />
-                  </InputGroup>
-
-               </CardBody>
-               <CardFooter>
-               <Button color="primary" className="px-4" onClick={this.runCampaign}>
+                  <Input
+                    type="number"
+                    placeholder="days"
+                    name="limitedDays"
+                    onChange={this.changeHandler}
+                  />
+                </InputGroup>
+              </CardBody>
+              <CardFooter>
+                <Button
+                  color="primary"
+                  className="px-4"
+                  onClick={this.runCampaign}
+                >
                   Run Campaign
                 </Button>
-               </CardFooter>
-              </Card>
+              </CardFooter>
+            </Card>
           </Col>
         </Row>
         <Row>
@@ -336,7 +442,93 @@ class Dashboard extends Component {
                   />
                 </InputGroup>
                 <br />
-                Select User:
+                Select User from: State:
+                <InputGroup className="mb-4">
+                  <select name="campState" onChange={this.changeHandler}>
+                    {allCity.map((e, i) => {
+                      if (allCity.length - 1 == i) {
+                        return [
+                          <option value="all" key={i + 1}>
+                            all
+                          </option>,
+                          <option value={e} key={i}>
+                            {e}
+                          </option>
+                        ];
+                      }
+                      return (
+                        <option value={e} key={i}>
+                          {e}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                City:
+                <InputGroup className="mb-4">
+                  <select
+                    name="campCity"
+                    onChange={this.changeHandler}
+                    disabled={this.state.campState ? false : true}
+
+                  >
+                    {this.state.campState !="all" && cityData[this.state.campState].map((e, i) => {
+                      if (cityData[this.state.campState].length - 1 == i) {
+                        return [
+                          <option value="all" key={i + 1}>
+                            all
+                          </option>,
+                          <option value={e} key={i}>
+                            {e}
+                          </option>
+                        ];
+                      }
+                      return (
+                        <option value={e} key={i}>
+                          {e}{" "}
+                        </option>
+                      );
+                    })}
+                    {this.state.campState =="all" &&(
+                      <option value="all" key= {0}>all</option>
+                    )
+
+                    }
+                  </select>
+                </InputGroup>
+                Email Template:
+                <br />
+                <textarea
+                  placeholder="Define Email Template here..."
+                  cols={80}
+                  rows={20}
+                  name="etemplate"
+                  onChange={this.changeHandler}
+                  style={{ margin: "2em" }}
+                />
+                <br />
+                <Button
+                  color="primary"
+                  className="px-4"
+                  onClick={this.addCampaign}
+                  disabled={
+                    this.state.cpgname &&
+                    this.state.etemplate &&
+                    this.state.campCity &&
+                    this.state.campState
+                      ? false
+                      : true
+                  }
+                >
+                  Add Campaign
+                </Button>
+              </CardBody>
+            </Card>
+          </Col>
+          <Col lg="4">
+            <Card>
+              <CardHeader>All Users</CardHeader>
+              <CardBody>
                 <ReactTable
                   data={this.state.data}
                   filterable
@@ -352,23 +544,16 @@ class Dashboard extends Component {
                   }
                   columns={[
                     {
-                      Header: (
-                        <input
-                          type="checkbox"
-                          onChange={this.handleChange}
-                          checked={this.state.selectAll}
-                        />
-                      ),
-                      Cell: row => (
-                        <input
-                          type="checkbox"
-                          defaultChecked={this.state.checked[row.index]}
-                          checked={this.state.checked[row.index]}
-                          onChange={() => this.handleSingleCheckboxChange(row)}
-                        />
-                      ),
-                      sortable: false,
-                      filterable: false
+                      Header: "name",
+                      accessor: "name"
+                    },
+                    {
+                      Header: "state",
+                      accessor: "state"
+                    },
+                    {
+                      Header: "city",
+                      accessor: "city"
                     },
                     {
                       Header: "email",
@@ -378,101 +563,21 @@ class Dashboard extends Component {
                   className="-striped "
                   onPageSizeChange={pageIndex => this.pageSizeChange(pageIndex)}
                   onPageChange={pageSize => this.pageChange(pageSize)}
-                /><br />
-
-                Email Template:<br />
-                <textarea
-                  placeholder="Define Email Template here..."
-                  cols={80}
-                  rows={20}
-                  name="etemplate"
-                  onChange={this.changeHandler}
-                  style={{ margin: "2em" }}
-                ></textarea>
-
-
-
-                <br />
-
-                <Button color="primary" className="px-4" onClick={this.addCampaign}>
-                  Add Campaign
-                </Button>
+                />
               </CardBody>
             </Card>
           </Col>
-            <Col lg="4">
-            <Card>
-             <CardHeader> Selected Users:</CardHeader>
-             <CardBody>
-            {this.state.recepients.join()}
-            </CardBody>
-            </Card>
-            </Col>
         </Row>
         <Row>
-        <Col lg="6">
-        All Stats:
-        Toatal Sent:{this.state.sent}
-        <Card>
-          <CardHeader>opend:</CardHeader>
-          <ReactTable
-                  data={this.state.opendData}
-                  filterable
-                  showPagination={true}
-                  showPageSizeOptions={true}
-                  defaultFilterMethod={(filter, row) =>
-                    row[filter.id] !== undefined
-                      ? String(row[filter.id])
-                          .toLowerCase()
-                          .includes(filter.value.toLowerCase())
-                      : false
-                  }
-                  columns={[
-                    {
-                      Header: "email",
-                      accessor: "recipient"
-                    }
-                    ,
-                    {
-                      Header: "Total opened Times",
-                      accessor: "count"
-                    }
-                  ]}
-                  className="-striped "
-                />
-        </Card>
-        </Col>
-        <Col lg="6">
-        <Card>
-        <CardHeader>clicked:</CardHeader>
-        <ReactTable
-                  data={this.state.clickedData}
-                  filterable
-                  showPagination={true}
-                  showPageSizeOptions={true}
-                  defaultFilterMethod={(filter, row) =>
-                    row[filter.id] !== undefined
-                      ? String(row[filter.id])
-                          .toLowerCase()
-                          .includes(filter.value.toLowerCase())
-                      : false
-                  }
-                  columns={[
-                    {
-                      Header: "email",
-                      accessor: "recipient"
-                    }
-                    ,
-                    {
-                      Header: "Total clicked Times",
-                      accessor: "count"
-                    }
-                  ]}
-                  className="-striped "
-                />
-                </Card>
-        </Col>
-          </Row>
+          <Col lg="6">
+            <Card>
+            <CardHeader>Stats</CardHeader>
+            Total Sent: {this.state.sent} <br />
+             Total Times Opened:  {this.state.opendData}<br />
+             Total Times clickd:{this.state.clickedData}<br />
+            </Card>
+          </Col>
+        </Row>
       </div>
     );
   }
