@@ -17,7 +17,7 @@ import { NotificationManager } from "react-notifications";
 import cityData from "./city_state";
 import "react-table/react-table.css";
 import AuthService from "../../AuthService";
-
+import lodash from 'lodash'
 const allCity = Object.keys(cityData);
 
 const auth = new AuthService();
@@ -38,10 +38,16 @@ class Dashboard extends Component {
     sent: 0,
     clickedData: [],
     opendData: [],
+    thData:[],
     userState: allCity[0],
     userCity: cityData[allCity[0]][0],
+    thState: allCity[0],
+    thCity: cityData[allCity[0]][0],
     campState: allCity[0],
-    campCity: 'all'
+    campCity: 'all',
+    thDet:'',
+    finalCity:[],
+    finalState:[]
   };
 
   componentDidMount() {
@@ -55,6 +61,7 @@ class Dashboard extends Component {
       .join("&");
     this.fetchCampaign();
     this.fetchStats();
+    this.fetchTheaters();
     auth
       .fetch("/apis/emailList/fetchEmails?" + query, { method: "GET" })
       .then(data2 => {
@@ -74,6 +81,27 @@ class Dashboard extends Component {
         console.log(error);
         NotificationManager.error("Failed to fetch emails");
       });
+  }
+  fetchTheaters = ()=>{
+    const page = 1;
+    let params = {
+      limit: page * this.state.pageSize,
+      skip: page * this.state.pageSize - this.state.pageSize
+    };
+    let query = Object.keys(params)
+      .map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k]))
+      .join("&");
+    auth
+    .fetch("/apis/theaters/fetchTheaters?" + query, { method: "GET" })
+    .then(data2 => {
+      this.setState({
+        thData: data2,
+      });
+    })
+    .catch(error => {
+      console.log(error);
+      NotificationManager.error("Failed to fetch theaters");
+    });
   }
 
   fetchStats = () => {
@@ -150,9 +178,42 @@ class Dashboard extends Component {
     });
   };
   changeHandler = e => {
+    //currently deselect wont work, only will work if deselect all the items
+    if(e.target.name=='campCity' || e.target.name=='campState'){
+      const stateCursor= ((e.target.name == 'campCity') ? 'finalCity' : 'finalState') ;
+
+          if(e.target.value){
+            let cloning = this.state[stateCursor] ;
+            console.log(cloning);
+            let updatedData = cloning.concat(e.target.value);
+            updatedData = lodash.uniq(updatedData);
+            this.setState({
+              [`${stateCursor}`]:updatedData
+            });
+          }else{
+            this.setState({
+              [`${stateCursor}`]:[]
+            });
+          }
+    }else if(e.target.name=='thDet'){
+      if(e.target.value){
+        const datas = this.state.thData[e.target.value]
+        let cloningCity = this.state.finalCity ;
+        let updatedDataCitY = cloningCity.concat(datas.city);
+        let cloningState = this.state.finalState ;
+        let updatedDataState = cloningState.concat(datas.state);
+        updatedDataState = lodash.uniq(updatedDataState);
+        updatedDataCitY = lodash.uniq(updatedDataCitY);
+        this.setState({
+          finalCity:updatedDataCitY,
+          finalState:updatedDataState
+        });
+      }
+    }else{
     this.setState({
       [e.target.name]: e.target.value
     });
+  }
   };
   loading = () => (
     <div className="animated fadeIn pt-1 text-center">Loading...</div>
@@ -193,6 +254,38 @@ class Dashboard extends Component {
         NotificationManager.error("Failed to fetch emails");
       });
   };
+
+  pageChangeth = page => {
+    //fetch data where limit : page*this.state.pageSize, skip:page*this.state.pageSize - this.state.pageSize
+    let params = {
+      limit: page * this.state.pageSize,
+      skip: page * this.state.pageSize - this.state.pageSize
+    };
+    let query = Object.keys(params)
+      .map(k => encodeURIComponent(k) + "=" + encodeURIComponent(params[k]))
+      .join("&");
+    auth
+      .fetch("/apis/theaters/fetchTheaters" + query, { method: "GET" })
+      .then(data => {
+        console.log(data);
+        var checkedCopy = this.state.checked;
+        var selectAll = this.state.selectAll;
+        data.forEach(function(e, index) {
+          checkedCopy.push(selectAll);
+        });
+
+        this.setState({
+          data: data,
+          checked: checkedCopy,
+          selectAll: selectAll
+        });
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to fetch emails");
+      });
+  };
+
   addEmail = () => {
     auth
       .fetch("/apis/emailList/addEmail", {
@@ -236,8 +329,8 @@ class Dashboard extends Component {
         body: JSON.stringify({
           campaignName: this.state.cpgname,
           usersSelected: {
-            city:this.state.campCity,
-            state:this.state.campState
+            city:this.state.finalCity.length ?this.state.finalCity : [this.state.campCity],
+            state:this.state.finalState.length ? this.state.finalState: [this.state.campState]
           },
           template: this.state.etemplate
         })
@@ -250,6 +343,32 @@ class Dashboard extends Component {
         console.log(error);
         NotificationManager.error("Failed to add Campaign!");
       });
+  };
+
+  addTh = () => {
+    auth
+      .fetch("/apis/theaters/addTheater", {
+        method: "POST",
+        body: JSON.stringify({
+          name: this.state.thName,
+          city: this.state.thCity,
+          state: this.state.thState
+        })
+      })
+      .then(data => {
+      let alldata = this.state.thData;
+      const concatedData = alldata.concat(data);
+        this.setState({
+          thData: concatedData
+        });
+        //above thing not used now
+        NotificationManager.success("Email added to the list ");
+      })
+      .catch(error => {
+        console.log(error);
+        NotificationManager.error("Failed to add theater");
+      });
+    // this.state.email
   };
   fetchCampaign = () => {
     auth
@@ -310,7 +429,7 @@ class Dashboard extends Component {
               <CardHeader>User Segment</CardHeader>
 
               <div style={{ margin: "2.5%" }}>
-                <p className="text-muted"> Addd/Update User Email List:</p>
+                <p className="text-muted"> Addd User List:</p>
                 <InputGroup className="mb-4">
                   <InputGroupAddon addonType="prepend">
                     <InputGroupText>name</InputGroupText>
@@ -380,6 +499,68 @@ class Dashboard extends Component {
             </Card>
           </Col>
           <Col xs="12" sm="6" lg="4">
+            <Card className="p-4" className="justify-content-center">
+              <CardHeader>Theater Segment</CardHeader>
+
+              <div style={{ margin: "2.5%" }}>
+                <p className="text-muted"> Add Theater List:</p>
+                <InputGroup className="mb-4">
+                  <InputGroupAddon addonType="prepend">
+                    <InputGroupText>name</InputGroupText>
+                  </InputGroupAddon>
+                  <Input
+                    type="text"
+                    placeholder="name"
+                    name="thName"
+                    onChange={this.changeHandler}
+                  />
+                </InputGroup>
+                Select State:
+                <InputGroup className="mb-4">
+                  <select name="thState" onChange={this.changeHandler}>
+                    {allCity.map((e, i) => {
+                      return (
+                        <option value={e} key={i}>
+                          {e}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                Select City:
+                <InputGroup className="mb-4">
+                  <select
+                    name="thCity"
+                    onChange={this.changeHandler}
+                    disabled={this.state.thState ? false : true}
+                  >
+                    {cityData[this.state.thState].map((e, i) => {
+                      return (
+                        <option value={e} key={i}>
+                          {e}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                <Button
+                  color="primary"
+                  className="px-4"
+                  onClick={this.addTh}
+                  disabled={
+                    this.state.thName &&
+                    this.state.thCity &&
+                    this.state.thState
+                      ? false
+                      : true
+                  }
+                >
+                  Add
+                </Button>
+              </div>
+            </Card>
+          </Col>
+          <Col xs="12" sm="6" lg="4">
             <Card>
               <CardHeader>Run a Campaign</CardHeader>
               <CardBody>
@@ -427,6 +608,52 @@ class Dashboard extends Component {
           </Col>
         </Row>
         <Row>
+          <Col lg="6">
+            <Card>
+            <CardHeader>Stats</CardHeader>
+            Total Sent: {this.state.sent} <br />
+             Total Times Opened:  {this.state.opendData}<br />
+             Total Times clickd:{this.state.clickedData}<br />
+            </Card>
+          </Col>
+          <Col lg="6">
+            <Card>
+            <CardHeader>Theater List</CardHeader>
+            <ReactTable
+                  data={this.state.thData}
+                  filterable
+                  showPagination={true}
+                  showPageSizeOptions={true}
+                  defaultPageSize={this.state.pageSize}
+                  defaultFilterMethod={(filter, row) =>
+                    row[filter.id] !== undefined
+                      ? String(row[filter.id])
+                          .toLowerCase()
+                          .includes(filter.value.toLowerCase())
+                      : false
+                  }
+                  columns={[
+                    {
+                      Header: "name",
+                      accessor: "name"
+                    },
+                    {
+                      Header: "state",
+                      accessor: "state"
+                    },
+                    {
+                      Header: "city",
+                      accessor: "city"
+                    }
+                  ]}
+                  className="-striped "
+                  onPageSizeChange={pageIndex => this.pageSizeChange(pageIndex)}
+                  onPageChange={pageSize => this.pageChangeth(pageSize)}
+                />
+            </Card>
+          </Col>
+        </Row>
+        <Row>
           <Col lg="8">
             <Card>
               <CardHeader>Create Campaign with Email Template:</CardHeader>
@@ -442,9 +669,22 @@ class Dashboard extends Component {
                   />
                 </InputGroup>
                 <br />
+                Select Theater:
+                <InputGroup className="mb-4">
+                  <select name="thDet" onChange={this.changeHandler} multiple={true}>
+                    {this.state.thData.map((e, i) => {
+                      return (
+                        <option value={i} key={i}>
+                          {e.name}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </InputGroup>
+                <br />
                 Select User from: State:
                 <InputGroup className="mb-4">
-                  <select name="campState" onChange={this.changeHandler}>
+                  <select name="campState" onChange={this.changeHandler} multiple={true}>
                     {allCity.map((e, i) => {
                       if (allCity.length - 1 == i) {
                         return [
@@ -470,9 +710,9 @@ class Dashboard extends Component {
                     name="campCity"
                     onChange={this.changeHandler}
                     disabled={this.state.campState ? false : true}
-
+                    multiple={true}
                   >
-                    {this.state.campState !="all" && cityData[this.state.campState].map((e, i) => {
+                    {this.state.campState && this.state.campState !="all" && cityData[this.state.campState].map((e, i) => {
                       if (cityData[this.state.campState].length - 1 == i) {
                         return [
                           <option value="all" key={i + 1}>
@@ -489,13 +729,15 @@ class Dashboard extends Component {
                         </option>
                       );
                     })}
-                    {this.state.campState =="all" &&(
+                    {this.state.campState && this.state.campState =="all" &&(
                       <option value="all" key= {0}>all</option>
                     )
 
                     }
                   </select>
                 </InputGroup>
+                Selected Cities :{this.state.finalCity.join()}<br />
+                Selected States :{this.state.finalState.join()}<br />
                 Email Template:
                 <br />
                 <textarea
@@ -565,16 +807,6 @@ class Dashboard extends Component {
                   onPageChange={pageSize => this.pageChange(pageSize)}
                 />
               </CardBody>
-            </Card>
-          </Col>
-        </Row>
-        <Row>
-          <Col lg="6">
-            <Card>
-            <CardHeader>Stats</CardHeader>
-            Total Sent: {this.state.sent} <br />
-             Total Times Opened:  {this.state.opendData}<br />
-             Total Times clickd:{this.state.clickedData}<br />
             </Card>
           </Col>
         </Row>
