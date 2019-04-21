@@ -1,0 +1,48 @@
+{
+  "groups": {
+    "default": {
+      "packages": [
+        "package.json",
+        "src/containers/MainLayout/package.json",
+        "src/views/Base/Breadcrumbs/package.json",
+        "src/views/Base/Cards/package.json",
+        "src/views/Base/Carousels/package.json",
+        "src/views/Base/Collapses/package.json",
+        "src/views/Base/Dropdowns/package.json",
+        "src/views/Base/Forms/package.json",
+        "src/views/Base/Jumbotrons/package.json",
+        "src/views/Base/ListGroups/package.json",
+        "src/views/Base/Navbars/package.json",
+        "src/views/Base/Navs/package.json",
+        "src/views/Base/Paginations/package.json",
+        "src/views/Base/Popovers/package.json",
+        "src/views/Base/ProgressBar/package.json",
+        "src/views/Base/Switches/package.json",
+        "src/views/Base/Tables/package.json",
+        "src/views/Base/Tabs/package.json",
+        "src/views/Base/Tooltips/package.json",
+        "src/views/Buttons/BrandButtons/package.json",
+        "src/views/Buttons/ButtonDropdowns/package.json",
+        "src/views/Buttons/ButtonGroups/package.json",
+        "src/views/Buttons/Buttons/package.json",
+        "src/views/Charts/package.json",
+        "src/views/Dashboard/package.json",
+        "src/views/Icons/CoreUIIcons/package.json",
+        "src/views/Icons/Flags/package.json",
+        "src/views/Icons/FontAwesome/package.json",
+        "src/views/Icons/SimpleLineIcons/package.json",
+        "src/views/Notifications/Alerts/package.json",
+        "src/views/Notifications/Badges/package.json",
+        "src/views/Notifications/Modals/package.json",
+        "src/views/Pages/Login/package.json",
+        "src/views/Pages/Page404/package.json",
+        "src/views/Pages/Page500/package.json",
+        "src/views/Pages/Register/package.json",
+        "src/views/Theme/Colors/package.json",
+        "src/views/Theme/Typography/package.json",
+        "src/views/Users/package.json",
+        "src/views/Widgets/package.json"
+      ]
+    }
+  }
+}
